@@ -1,0 +1,967 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#ffc400">
+<title>TSY TAXI | Book Your Ride</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--yellow:#ffc400;--ink:#111;--muted:#777;--line:#e9e9e9;--green:#16834a}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,"Noto Sans Tamil",Arial,sans-serif;color:var(--ink)}
+body{min-height:100svh;background:radial-gradient(circle at 50% 0,#fff4c4 0,#fff 42%,#f4f4f2 100%);overflow-x:hidden}
+.topbar{min-height:68px;background:#111;color:#fff;border-bottom:4px solid var(--yellow);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(14px,5vw,60px)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{width:43px;height:43px;border-radius:50%;object-fit:contain;background:#fff;padding:2px}
+.brand strong{display:block;font-size:18px;font-weight:950;letter-spacing:1.3px;line-height:1.05}
+.brand small{display:block;color:var(--yellow);font-size:9px;letter-spacing:2px;font-weight:800;margin-top:4px}
+.safe{font-size:9px;letter-spacing:.8px;color:#222;background:#ffdf66;border-radius:30px;padding:8px 11px;font-weight:900;white-space:nowrap}
+main{min-height:calc(100svh - 98px);display:grid;place-items:center;padding:18px 14px}
+.booking-card{width:min(100%,510px);background:#fff;border:1px solid #eee;border-radius:25px;padding:23px 25px 20px;box-shadow:0 18px 55px #00000012}
+.eyebrow{text-align:center;color:#a47a00;font-size:10px;font-weight:950;letter-spacing:2.2px;text-transform:uppercase}
+.heading{text-align:center;font-size:clamp(25px,5vw,32px);font-weight:950;letter-spacing:-1px;margin:7px 0 5px;line-height:1.1}
+.sub{text-align:center;color:var(--muted);font-size:12px;margin:0 0 20px;line-height:1.45}
+.field{margin:0 0 13px;position:relative}
+.field label{display:block;font-size:11px;font-weight:900;margin:0 0 7px 2px}
+.input-shell{display:flex;align-items:center;gap:9px;border:1.5px solid #e3e3e3;border-radius:13px;padding:0 12px;height:51px;background:#fff}
+.input-shell:focus-within{border-color:#d8a000;box-shadow:0 0 0 3px #ffc40024}
+.field-icon{font-size:18px;flex:0 0 auto}
+.input-shell input{border:0;outline:0;width:100%;min-width:0;height:100%;font-size:14px;color:#111;background:transparent}
+.input-shell input::placeholder{color:#a2a2a2}
+.gps-btn{border:0;border-radius:10px;background:#111;color:#fff;font-size:10px;font-weight:900;padding:9px 10px;white-space:nowrap;cursor:pointer}
+.gps-btn:disabled{opacity:.55}
+.suggestions{position:absolute;z-index:1000;top:78px;left:0;right:0;background:#fff;border:1px solid #e7e7e7;border-radius:13px;box-shadow:0 12px 28px #0002;max-height:250px;overflow:auto;display:none}
+.suggestions.show{display:block}
+.suggestion{padding:10px 13px;font-size:13px;border-bottom:1px solid #f1f1f1;cursor:pointer}
+.suggestion:last-child{border:0}
+.suggestion:hover{background:#fff7d8}
+.suggestion small{display:block;color:#888;font-size:10px;margin-top:3px;line-height:1.4}
+.suggestion .place-name{font-weight:800}
+.suggestion .place-type{font-size:9px;color:#a47a00;font-weight:800;margin-left:5px}
+.route-line{height:14px;width:1px;background:#d4d4d4;margin:-9px 0 -4px 21px}
+.map-section{margin:12px 0 11px;border:1px solid #e9e9e9;border-radius:15px;padding:10px;background:#fff}
+.map-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 2px 9px}
+.map-heading strong{font-size:11px;font-weight:950}
+.map-heading span{font-size:9px;color:#888;text-align:right}
+#routeMap{width:100%;height:220px;border-radius:11px;overflow:hidden;background:#eee;z-index:1}
+.map-legend{display:flex;gap:15px;margin:8px 2px 1px;font-size:9px;color:#666}
+.map-legend span{display:flex;align-items:center;gap:5px}
+.map-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.map-dot.pickup{background:#16834a}
+.map-dot.drop{background:#e34c38}
+.fare-card{display:flex;align-items:center;gap:13px;background:linear-gradient(110deg,#fff8d9,#fffdf3);border:1px solid #f2df9c;border-radius:16px;padding:12px 14px;margin:12px 0}
+.auto-art{width:64px;height:48px;flex:0 0 64px;display:block}
+.fare-copy{flex:1;min-width:0}
+.fare-title{font-size:10px;color:#806000;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.fare-price{font-size:27px;font-weight:950;line-height:1.1;margin:3px 0 2px;letter-spacing:-.7px}
+.fare-meta{font-size:10px;color:#777;line-height:1.4}
+.fare-rate{font-size:10px;font-weight:900;color:#333;background:#fff;border:1px solid #f0e2b3;border-radius:20px;padding:7px 9px;white-space:nowrap}
+.distance{display:flex;justify-content:space-between;align-items:center;padding:0 2px 11px;font-size:11px;color:#666}
+.distance strong{color:#111;font-size:12px}
+.primary{width:100%;height:51px;border:0;border-radius:13px;background:var(--yellow);color:#111;font-size:13px;font-weight:950;letter-spacing:.35px;cursor:pointer;box-shadow:0 4px 0 #d19e00}
+.primary:active{transform:translateY(2px);box-shadow:0 2px 0 #d19e00}
+.primary:disabled{opacity:.55;cursor:not-allowed}
+.hint{text-align:center;color:#999;font-size:9px;line-height:1.5;margin:12px 8px 0}
+.status{display:none;margin:10px 0 0;padding:10px 12px;border-radius:11px;font-size:11px;line-height:1.45}
+.status.show{display:block}
+.status.info{background:#fff7df;color:#745800}
+.status.error{background:#fff0ed;color:#a6382c}
+.status.success{background:#eaf8ef;color:#176534}
+.footer{text-align:center;color:#999;font-size:9px;padding:0 12px 10px}
+.modal{position:fixed;inset:0;z-index:3000;background:#0009;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.dialog{width:min(100%,340px);background:#fff;border-radius:20px;padding:24px 20px;text-align:center;box-shadow:0 20px 60px #0004}
+.modal-icon{width:48px;height:48px;border-radius:50%;background:#fff0ed;color:#d74737;display:grid;place-items:center;font-size:25px;font-weight:900;margin:0 auto 10px}
+.dialog h2{font-size:20px;margin:0 0 7px}
+.dialog p{font-size:12px;color:#666;line-height:1.55;margin:0 0 16px}
+.dialog button{height:44px;width:100%;border:0;border-radius:11px;background:#111;color:#fff;font-weight:900}
+.leaflet-container{font-family:inherit}
+@media(max-width:600px){
+ body{height:auto;min-height:100svh;overflow-x:hidden;overflow-y:auto}
+ .topbar{height:58px;padding:0 13px}
+ .brand img{width:36px;height:36px}
+ .brand strong{font-size:15px}
+ .brand small{font-size:8px;letter-spacing:1.6px}
+ .safe{font-size:8px;padding:7px 8px}
+ main{height:auto;min-height:calc(100svh - 80px);padding:9px 12px 16px;overflow:visible}
+ .booking-card{padding:15px 15px 13px;border-radius:21px;max-height:none;overflow:visible}
+ .eyebrow{font-size:8px}
+ .heading{font-size:25px;margin:5px 0 4px}
+ .sub{font-size:10px;margin-bottom:13px}
+ .field{margin-bottom:9px}
+ .field label{font-size:10px;margin-bottom:5px}
+ .input-shell{height:45px;border-radius:11px;padding:0 9px;gap:7px}
+ .input-shell input{font-size:12px}
+ .field-icon{font-size:16px}
+ .gps-btn{font-size:8px;padding:8px 7px}
+ .suggestions{top:70px;max-height:210px}
+ .suggestion{padding:9px 11px;font-size:12px}
+ .route-line{margin-left:19px;height:10px}
+ #routeMap{height:190px}
+ .map-section{margin:10px 0;padding:8px}
+ .map-heading strong{font-size:10px}
+ .map-heading span{font-size:8px}
+ .fare-card{margin:10px 0 8px;padding:9px 10px;gap:9px;border-radius:13px}
+ .auto-art{width:55px;height:41px;flex-basis:55px}
+ .fare-title{font-size:8px}
+ .fare-price{font-size:24px}
+ .fare-meta{font-size:9px}
+ .fare-rate{font-size:9px;padding:6px 7px}
+ .distance{font-size:10px;padding-bottom:8px}
+ .distance strong{font-size:11px}
+ .primary{height:46px;font-size:12px}
+ .hint{font-size:8px;margin-top:8px}
+ .footer{font-size:8px;padding-bottom:5px}
+}
+@media(max-height:680px) and (max-width:600px){
+ .booking-card{padding:10px 13px}
+ .heading{font-size:22px}
+ .sub{margin-bottom:8px}
+ .field{margin-bottom:7px}
+ .input-shell{height:41px}
+ #routeMap{height:165px}
+ .fare-card{margin:7px 0 6px;padding:7px 9px}
+ .auto-art{height:36px}
+ .fare-price{font-size:21px}
+ .primary{height:42px}
+ .hint{margin-top:5px}
+}
+</style>
+</head>
+
+<body>
+<header class="topbar">
+ <div class="brand">
+  <img src="logo.jpeg" alt="TSY Taxi logo">
+  <div><strong>TSY TAXI</strong><small>YOUR RIDE. YOUR WAY.</small></div>
+ </div>
+ <div class="safe">● SAFE & RELIABLE</div>
+</header>
+
+<main>
+<section class="booking-card" aria-label="Book your taxi">
+ <div class="eyebrow">Welcome to TSY Taxi</div>
+ <h1 class="heading">Where are you <span style="color:#d49c00">going?</span></h1>
+ <p class="sub">Type in English or தமிழ். Choose your pickup and destination to calculate your fare.</p>
+
+ <div class="field" id="pickupField">
+  <label for="pickupInput">PICKUP LOCATION / ஏறும் இடம்</label>
+  <div class="input-shell">
+   <span class="field-icon">📍</span>
+   <input id="pickupInput" type="text" autocomplete="off" placeholder="Village / street / address (English or Tamil)">
+   <button class="gps-btn" id="gpsBtn" type="button">⌖ MY LOCATION</button>
+  </div>
+  <div class="suggestions" id="pickupSuggestions" role="listbox"></div>
+ </div>
+
+ <div class="route-line"></div>
+
+ <div class="field" id="destinationField">
+  <label for="destinationInput">DESTINATION / இறங்கும் இடம்</label>
+  <div class="input-shell">
+   <span class="field-icon">🏁</span>
+   <input id="destinationInput" type="text" autocomplete="off" placeholder="Village, landmark or address (English or Tamil)">
+  </div>
+  <div class="suggestions" id="destinationSuggestions" role="listbox"></div>
+ </div>
+
+ <div class="map-section">
+  <div class="map-heading">
+   <strong>📍 YOUR RIDE ROUTE</strong>
+   <span id="mapStatus">50 km service area around Thisayanvilai</span>
+  </div>
+  <div id="routeMap"></div>
+  <div class="map-legend">
+   <span><i class="map-dot pickup"></i> Pickup</span>
+   <span><i class="map-dot drop"></i> Destination</span>
+  </div>
+ </div>
+
+ <div class="fare-card">
+  <svg class="auto-art" viewBox="0 0 120 82" role="img" aria-label="Yellow auto rickshaw">
+   <path d="M27 24Q29 10 46 10h26q15 0 19 15l5 8H23z" fill="#ffc400" stroke="#171717" stroke-width="3" stroke-linejoin="round"/>
+   <path d="M44 14h26q10 0 13 12H42z" fill="#bde7f4" stroke="#171717" stroke-width="2.5"/>
+   <path d="M24 31h73l9 17v17H17V47z" fill="#ffc400" stroke="#171717" stroke-width="3" stroke-linejoin="round"/>
+   <path d="M19 47h25v18H17V49zM49 47h48v18H49z" fill="#202020" stroke="#171717" stroke-width="2"/>
+   <path d="M22 36h73l7 10H18z" fill="#171717"/>
+   <path d="M24 38h67" stroke="#fff0a8" stroke-width="2"/>
+   <circle cx="35" cy="66" r="9" fill="#171717"/><circle cx="35" cy="66" r="4" fill="#d7d7d7"/>
+   <circle cx="88" cy="66" r="9" fill="#171717"/><circle cx="88" cy="66" r="4" fill="#d7d7d7"/>
+   <path d="M103 48h8v8h-8" fill="#ef4b36" stroke="#171717" stroke-width="2"/>
+   <path d="M12 49h7v8h-7" fill="#fff" stroke="#171717" stroke-width="2"/>
+  </svg>
+  <div class="fare-copy">
+   <div class="fare-title">Estimated auto fare</div>
+   <div class="fare-price" id="fareValue">₹0.00</div>
+   <div class="fare-meta" id="fareMeta">Enter pickup and destination</div>
+  </div>
+  <div class="fare-rate">₹20 / KM</div>
+ </div>
+
+ <div class="distance">
+  <span>Driving distance</span>
+  <strong id="distanceValue">-- km</strong>
+ </div>
+
+ <button class="primary" id="continueBtn" type="button" disabled>CONTINUE TO BOOKING →</button>
+ <div class="status" id="statusBox" aria-live="polite"></div>
+ <p class="hint">Fare: ₹20 per kilometre (₹0.02 per metre). Both locations must be within 50 km of Thisayanvilai, Tirunelveli District.</p>
+</section>
+</main>
+
+<footer class="footer">© TSY TAXI · YOUR RIDE. YOUR WAY.</footer>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+ <div class="dialog">
+  <div class="modal-icon">!</div>
+  <h2 id="modalTitle">Service not available</h2>
+  <p id="modalMessage">This location is outside our service radius.</p>
+  <button type="button" id="closeModal">OK, GOT IT</button>
+ </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+
+/* =========================================
+   CONFIGURATION
+========================================= */
+const SERVICE_CENTER={name:"Thisayanvilai",lat:8.33611,lon:77.86444};
+const SERVICE_RADIUS_KM=50;
+const RATE_PER_KM=20;
+const RATE_PER_METRE=RATE_PER_KM/1000;
+
+const NOMINATIM_URL="https://nominatim.openstreetmap.org/search";
+const PHOTON_URL="https://photon.komoot.io/api/";
+const ROUTE_SERVERS=[
+  "https://router.project-osrm.org/route/v1/driving/",
+  "https://routing.openstreetmap.de/routed-car/route/v1/driving/"
+];
+
+/* Square box that fully contains the 50 km circle (used only to ask the search servers;
+   every result is then filtered with an exact distance check). */
+const BOX=(()=>{
+  const dLat=SERVICE_RADIUS_KM/111.32;
+  const dLon=SERVICE_RADIUS_KM/(111.32*Math.cos(SERVICE_CENTER.lat*Math.PI/180));
+  return{
+    minLat:SERVICE_CENTER.lat-dLat,maxLat:SERVICE_CENTER.lat+dLat,
+    minLon:SERVICE_CENTER.lon-dLon,maxLon:SERVICE_CENTER.lon+dLon
+  };
+})();
+
+/* English / Tamil spelling variants -> search words */
+const ALIASES={
+  "thisayanvilai":"Thisayanvilai","thisaiyanvilai":"Thisayanvilai",
+  "thisayan vilai":"Thisayanvilai","thisaiyan vilai":"Thisayanvilai",
+  "thisaiyanvili":"Thisayanvilai","thisiyanvili":"Thisayanvilai",
+  "திசையன்விளை":"Thisayanvilai",
+  "idinthakarai":"Idinthakarai","idinthankarai":"Idinthakarai","இடிந்தகரை":"Idinthakarai",
+  "koodankulam":"Koodankulam","kudankulam":"Koodankulam","கூடன்குளம்":"Koodankulam",
+  "uvari":"Uvari","உவரி":"Uvari",
+  "manapad":"Manapad","manappadu":"Manapad","மணப்பாடு":"Manapad",
+  "periyathalai":"Periyathalai","nanguneri":"Nanguneri","நாங்குநேரி":"Nanguneri",
+  "valliyur":"Valliyur","வள்ளியூர்":"Valliyur",
+  "radhapuram":"Radhapuram","இராதாபுரம்":"Radhapuram",
+  "sathankulam":"Sathankulam","சாத்தான்குளம்":"Sathankulam",
+  "tattarmadam":"Tattarmadam","தட்டார்மடம்":"Tattarmadam",
+  "megnanapuram":"Megnanapuram","மெஞ்ஞானபுரம்":"Megnanapuram",
+  "ittamozhi":"Ittamozhi","இட்டமொழி":"Ittamozhi",
+  "vv college":"V.V. College","v v college":"V.V. College","vvcoe":"V.V. College"
+};
+
+const LOCAL_AREAS=[
+"ஞானியார்குடியிருப்பு","புதுக்குளம்","தெற்கு உடை பிறப்பு","மணி நகர்",
+"சுண்டங்கோட்டை","அன்பின்நகரம்","நரையன்குடியிருப்பு","மெய்யூர்",
+"படுக்கப்பத்து","அழகப்பபுரம்","பிச்சிவிளை","தாண்டவன்காடு",
+"மாதவன்குறிச்சி","சிறுநாடார்குடியிருப்பு","சித்தன்குடியிருப்பு",
+"உத்திரமாடன் குடியிருப்பு","கொட்டங்காடு","நன்னியூர்","எள்ளுவிளை",
+"அமராபுரம்","கூடல்நகர்","மணப்பாடு","குலசை","கருமாவிளை",
+"பள்ளிப்பத்து","கந்தபுரம்","பிறைகுடியிருப்பு",
+"அப்புவிளை","காரம்பாடு","இடையன்குடி","அருள்நகர்","ஆனைகுடி விலக்கு",
+"ஆனைகுடி","உப்பு அச்சம்பாடு","இலக்கரிவிளை","கடகுளம்",
+"வெம்மணங்குடி","உவரி","கூட்டப்பனை","டாட்டா குடியிருப்பு",
+"கூடுதாழை","குஞ்சன்விளை","குட்டம்","குட்டம் தோப்புவிளை",
+"V.V. காலேஜ்","தஞ்சை நகரம்","பண்டாரபுரம்",
+"சண்முகபுரம்","மகாதேவன்குளம்","அந்தோணியார்புரம்",
+"தொட்டிகாரன்விளை","சுவிசேஷபுரம்","சுப்பிரமணியபுரம்",
+"இட்டமொழி புதூர்","இட்டமொழி","பெருமனை அழகப்பபுரம்",
+"சங்கரன்குடியிருப்பு","இரட்டை கிணறு","வெங்கட்ராயபுரம்",
+"கொம்பன்குளம்","கீழக்குளம்","அமுதுண்ணாங்குடி","செட்டிக்குளம்",
+"நெடுங்குளம்","பேய்குளம்","விஜய அச்சம்பாடு","மேல பண்டாரபுரம்",
+"ஆண்டான்குளம்","வடக்கு விஜயநாராயணம்","பட்டஞ்சேரி",
+"தினையூரணி","காரியாண்டி","வடிவாழ்புரம்",
+"ITI","ரோச்மாநகர்","ஜோதிக்காவிளை","முதுமொத்தன்மொழி",
+"காரிகோவில்","குண்டல்","காளிகுமாரபுரம்","செம்பொன்விளை",
+"கோடாவிளை","எருமைக்குளம்","தலைவன்விளை","பசுவழி",
+"தங்கம்மாள்புரம்","ஆயன்குளம்","சொக்கலிங்கபுரம்",
+"கரைச்சுத்துப்புதூர்","புலிமான்குளம்","இராமன்குடி","நவ்வலடி",
+"வல்லான்விளை","தத்துவநேரி","கல்விளை","இரம்மதபுரம்",
+"சூடுஉயர்ந்தான் விளை","தோப்புவிளை","ஆத்தாங்கரை பள்ளிவாசல்",
+"சங்கனாபுரம்","தோட்டாவிளை","முருகானந்தபுரம்","கூத்தன்குழி",
+"ஆவுடையாள்புரம்","தில்லைவனத்தோப்பு","விஜயாபதி",
+"செல்வமருதூர் காலனி","மடத்தச்சம்பாடு","நாடார் அச்சம்பாடு",
+"பெத்தலேகம்","மருதநாச்சிவிளை","செட்டியார் பண்ணை",
+"தச்சன்விளை","குட்டிகலசன்விளை","பனைவிளை","அதிசயபுரம்",
+"கரிசல்","புத்தன்தருவை","மணல்மாதாகோவில்","செட்டிவிளை",
+"பெரியதாழை","முருகேசபுரம்","அழகியவிளை","தேரிவிளை",
+"இடைச்சிவிளை விலக்கு","இடைச்சிவிளை வடக்குத்தெரு",
+"பூவன்விளை","ஆனந்தவிளை விலக்கு","மோடிநகர்","ஆனந்தவிளை",
+"பொட்டல்விளை","பூச்சிக்காடு விலக்கு","பூச்சிக்காடு","மேட்டுவிளை",
+"பூவுடையார்புரம்","தாமரைமொழி","நடுவக்குறிச்சி","பிரகாசபுரம்",
+"சாலைபுதூர்","சாமிதோப்பு","அடப்புவிளை","சிறப்பூர்",
+"விஜயராமபுரம்","சாத்தான்குளம்","நல்லூர்","சௌக்கியபுரம்",
+"போலையர்புரம்","வாலத்தூர்","பொத்தகாலன்விளை (முதலூர்)",
+"முதலூர்","சுப்புராயபுரம்","கடாட்சபுரம்","வேப்பன்காடு",
+"மெஞ்ஞானபுரம்","தட்டார்மடம்","வைரவம்","கொம்மடிக்கோட்டை",
+"சொக்கன்குடியிருப்பு","சவேரியார்புரம்","உசரத்துக்குடியிருப்பு",
+"திருவம்பலாபுரம்","ஆத்துகுறிச்சி","சிதம்பராபுரம்","வட்டவிளை",
+"உதயத்தூர்","நந்தன்குளம்","மருச்சிகட்டி","பெட்டைக்குளம்",
+"பெருங்குளம்","உறுமன்குளம்","கைலாசபேரி","முடவன்குளம்",
+"சீலாத்திகுளம்","இராதாபுரம்","அணைக்கரை","பெருனாங்குளம்",
+"கஸ்தூரிரெங்கபுரம்","செல்வி மஹால்","குமாரபுரம்","வாழைத்தோட்டம்",
+"தெற்கு ஏறந்தை","மன்னார்புரம்","இராமானுஜபுரம்","துவரம்பாடு",
+"பட்டரைகட்டிவிளை","சங்கனாங்குளம்","சிவந்தியாபுரம்",
+"தெற்கு விஜயநாராயணம்","வடக்கு ஏறாந்தை","நாலந்துலா","INS",
+"கக்கன்நகர்","ஏமன்குளம்","பரப்பாடி","நாங்குநேரி","டோல்கேட்",
+"நம்பிக்குறிச்சி","மிட்டாதார்குளம்","கோட்டைக்கருங்குளம்",
+"கும்பிகுளம்","சமூகரெங்கபுரம்","துறைகுடியிருப்பு","கள்ளிகுளம்",
+"மடப்புரம்","வள்ளியூர்","இடிந்தகரை","கூடன்குளம்","பார்க்கனேரி",
+"திசையன்விளை","உடன்குடி","திருச்செந்தூர்","பணகுடி","அம்பாசமுத்திரம்",
+"Thisayanvilai","Thisaiyanvilai","Thisayan Vilai",
+"Udangudi","Sathankulam","Nanguneri","Valliyur","Panagudi",
+"Radhapuram","Uvari","Manapad","Koodankulam","Tiruchendur",
+"Idinthakarai","Periyathalai","Megnanapuram","Tattarmadam",
+"Ittamozhi","VV College"
+];
+
+/* =========================================
+   ELEMENTS + STATE
+========================================= */
+const $=id=>document.getElementById(id);
+const pickupInput=$("pickupInput"),destinationInput=$("destinationInput");
+const pickupSuggestions=$("pickupSuggestions"),destinationSuggestions=$("destinationSuggestions");
+const statusBox=$("statusBox"),continueBtn=$("continueBtn");
+const fareValue=$("fareValue"),fareMeta=$("fareMeta"),distanceValue=$("distanceValue");
+const mapStatus=$("mapStatus"),gpsBtn=$("gpsBtn");
+
+let pickup=null,destination=null;
+let routeDistanceMeters=null,routeDurationSeconds=null;
+let routeLayer=null,pickupMarker=null,destinationMarker=null;
+let calculationToken=0;
+const searchToken={pickup:0,destination:0};
+const searchTimer={pickup:null,destination:null};
+const searchCache=new Map();
+
+class OutOfAreaError extends Error{}
+
+/* =========================================
+   MAP
+========================================= */
+const routeMap=L.map("routeMap",{zoomControl:true})
+  .setView([SERVICE_CENTER.lat,SERVICE_CENTER.lon],10);
+
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,attribution:"&copy; OpenStreetMap contributors"
+}).addTo(routeMap);
+
+const serviceCircle=L.circle([SERVICE_CENTER.lat,SERVICE_CENTER.lon],{
+  radius:SERVICE_RADIUS_KM*1000,color:"#d6a000",fillColor:"#ffc400",
+  fillOpacity:.07,weight:2,dashArray:"6 6"
+}).addTo(routeMap);
+routeMap.fitBounds(serviceCircle.getBounds(),{padding:[12,12]});
+
+L.marker([SERVICE_CENTER.lat,SERVICE_CENTER.lon]).addTo(routeMap)
+  .bindPopup("TSY TAXI · Thisayanvilai / திசையன்விளை service centre");
+
+/* =========================================
+   HELPERS
+========================================= */
+const isTamil=s=>/[\u0B80-\u0BFF]/.test(s||"");
+
+function normalize(v){
+  return String(v||"").normalize("NFKC").toLocaleLowerCase().replace(/[^\p{L}\p{N}\p{M}]/gu,"");
+}
+function escapeHtml(v){
+  return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function showStatus(m,t="info"){statusBox.textContent=m;statusBox.className="status show "+t;}
+function hideStatus(){statusBox.textContent="";statusBox.className="status";}
+function showUnavailable(m){$("modalMessage").textContent=m;$("modal").classList.add("open");}
+function closeModal(){$("modal").classList.remove("open");}
+$("closeModal").addEventListener("click",closeModal);
+$("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal();});
+
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371,rad=v=>v*Math.PI/180;
+  const dLat=rad(lat2-lat1),dLon=rad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function distanceFromCentre(l){return haversineKm(SERVICE_CENTER.lat,SERVICE_CENTER.lon,l.lat,l.lon);}
+function isInsideServiceRadius(l){return distanceFromCentre(l)<=SERVICE_RADIUS_KM;}
+
+function formatDuration(s){
+  const m=Math.round(s/60);
+  if(m<60)return m+" min";
+  const h=Math.floor(m/60),r=m%60;
+  return r?h+" hr "+r+" min":h+" hr";
+}
+
+function outsideMessage(label,km){
+  return label+" is approximately "+km.toFixed(1)+" km from Thisayanvilai. TSY TAXI accepts locations only within "+SERVICE_RADIUS_KM+" km.";
+}
+
+function clearRouteMap(){
+  if(routeLayer){routeMap.removeLayer(routeLayer);routeLayer=null;}
+  if(pickupMarker){routeMap.removeLayer(pickupMarker);pickupMarker=null;}
+  if(destinationMarker){routeMap.removeLayer(destinationMarker);destinationMarker=null;}
+  mapStatus.textContent="Select locations to view route";
+}
+
+function resetFare(){
+  calculationToken++;
+  routeDistanceMeters=null;routeDurationSeconds=null;
+  fareValue.textContent="₹0.00";
+  fareMeta.textContent="Enter pickup and destination";
+  distanceValue.textContent="-- km";
+  continueBtn.disabled=true;
+  clearRouteMap();
+}
+
+async function fetchJson(url,ms){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),ms);
+  try{
+    const r=await fetch(url,{headers:{Accept:"application/json"},signal:controller.signal});
+    if(!r.ok)throw new Error("Search service returned HTTP "+r.status);
+    return await r.json();
+  }finally{clearTimeout(timer);}
+}
+
+/* =========================================
+   SEARCH PROVIDERS (English + Tamil)
+========================================= */
+
+/* Nominatim: gives Tamil (name:ta) and English (name:en) names. */
+async function nominatimSearch(query){
+  const params=new URLSearchParams({
+    format:"jsonv2",q:query,limit:"10",
+    addressdetails:"1",namedetails:"1",
+    "accept-language":"en",countrycodes:"in",
+    viewbox:[BOX.minLon,BOX.maxLat,BOX.maxLon,BOX.minLat].join(","),
+    bounded:"1"
+  });
+  const data=await fetchJson(NOMINATIM_URL+"?"+params,12000);
+  return (Array.isArray(data)?data:[]).map(item=>{
+    const lat=Number(item.lat),lon=Number(item.lon);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+    const nd=item.namedetails||{},a=item.address||{};
+    const base=nd.name||item.name||"";
+    let en=nd["name:en"],ta=nd["name:ta"];
+    if(!ta&&isTamil(base))ta=base;
+    if(!en&&base&&!isTamil(base))en=base;
+    if(!en&&!ta)en=String(item.display_name||"Location").split(",")[0];
+    const area=(en&&ta&&en!==ta)?en+" / "+ta:(en||ta);
+    const place=a.village||a.town||a.city||a.suburb||a.hamlet||a.neighbourhood;
+    const ctx=[place,a.county||a.state_district,a.state]
+      .filter(v=>v&&v!==en&&v!==ta)
+      .filter((v,i,arr)=>arr.indexOf(v)===i);
+    return{area,lat,lon,displayName:[area,...ctx].join(", "),method:"nominatim"};
+  }).filter(Boolean);
+}
+
+/* Photon: fast typo-tolerant search, used alongside Nominatim. */
+async function photonSearch(query,restrict){
+  const params=new URLSearchParams({
+    q:query,limit:restrict?"10":"3",
+    lat:String(SERVICE_CENTER.lat),lon:String(SERVICE_CENTER.lon),
+    zoom:"10",lang:"en"
+  });
+  if(restrict)params.set("bbox",[BOX.minLon,BOX.minLat,BOX.maxLon,BOX.maxLat].join(","));
+  const data=await fetchJson(PHOTON_URL+"?"+params,12000);
+  return (Array.isArray(data.features)?data.features:[]).map(f=>{
+    const c=f.geometry&&f.geometry.coordinates;
+    if(!c||c.length<2)return null;
+    const lon=Number(c[0]),lat=Number(c[1]);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+    const p=f.properties||{};
+    if(p.countrycode&&p.countrycode!=="IN")return null;
+    const main=p.name||p.street||p.city||p.county||"Location";
+    const parts=[p.street&&p.street!==main?p.street:null,p.district,p.city,p.county,p.state]
+      .filter(Boolean);
+    const displayName=[main,...parts].filter((v,i,a)=>a.indexOf(v)===i).join(", ");
+    return{area:main,lat,lon,displayName,method:"photon"};
+  }).filter(Boolean);
+}
+
+function dedupe(list){
+  const seen=new Set(),out=[];
+  list.forEach(l=>{
+    const key=normalize(l.area)+"|"+l.lat.toFixed(3)+"|"+l.lon.toFixed(3);
+    const nameKey=normalize(l.area)+"|"+l.lat.toFixed(2)+"|"+l.lon.toFixed(2);
+    if(seen.has(key)||seen.has(nameKey))return;
+    seen.add(key);seen.add(nameKey);out.push(l);
+  });
+  return out;
+}
+
+function queryVariants(query){
+  const q=query.trim();
+  const list=[q];
+  const alias=ALIASES[q.toLowerCase()];
+  if(alias)list.push(alias);
+  if(q.includes(",")){
+    const first=q.split(",")[0].trim();
+    if(first.length>=2)list.push(first);
+  }
+  return list.filter((v,i,a)=>a.indexOf(v)===i);
+}
+
+/* Only returns places INSIDE the 50 km circle. */
+async function searchPlaces(query){
+  const key=query.toLowerCase().trim();
+  if(searchCache.has(key))return searchCache.get(key);
+
+  let anySuccess=false,firstError=null;
+
+  for(const variant of queryVariants(query)){
+    const settled=await Promise.allSettled([
+      nominatimSearch(variant),
+      photonSearch(variant,true)
+    ]);
+
+    let merged=[];
+    settled.forEach(s=>{
+      if(s.status==="fulfilled"){anySuccess=true;merged=merged.concat(s.value);}
+      else if(!firstError)firstError=s.reason;
+    });
+
+    const inside=dedupe(merged.filter(isInsideServiceRadius)).slice(0,8);
+    if(inside.length){
+      searchCache.set(key,inside);
+      return inside;
+    }
+  }
+
+  if(!anySuccess){
+    const e=firstError;
+    if(e&&e.name==="AbortError")throw new Error("Location search took too long. Please try again.");
+    if(e instanceof TypeError)throw new Error("Cannot connect to the location search service. Check your internet connection.");
+    throw e||new Error("Location search failed. Please try again.");
+  }
+  return [];
+}
+
+/* Used only to tell the customer a place exists but is too far away. */
+async function findOutside(query){
+  try{
+    const results=await photonSearch(queryVariants(query)[0],false);
+    const outside=results.filter(r=>!isInsideServiceRadius(r));
+    outside.sort((a,b)=>distanceFromCentre(a)-distanceFromCentre(b));
+    return outside[0]||null;
+  }catch(e){return null;}
+}
+
+/* Pick best location for a typed text, or throw a clear error. */
+async function pickBest(text,label){
+  const results=await searchPlaces(text);
+  if(results.length)return results[0];
+
+  const far=await findOutside(text);
+  if(far){
+    throw new OutOfAreaError(outsideMessage(far.area||label,distanceFromCentre(far)));
+  }
+  throw new Error(
+    "We couldn't find '"+text+"' within 50 km of Thisayanvilai. Try the village name in English or Tamil, or add the nearby town."
+  );
+}
+
+/* =========================================
+   SUGGESTIONS
+========================================= */
+function getLocalSuggestions(query){
+  const key=normalize(query);
+  if(!key)return [];
+  const found=LOCAL_AREAS.filter(a=>normalize(a).includes(key)).slice(0,5);
+  const alias=ALIASES[query.toLowerCase().trim()];
+  if(alias&&!found.some(i=>normalize(i)===normalize(alias)))found.unshift(alias);
+  return found;
+}
+
+function addSuggestion(list,location,subtitle,onSelect){
+  const item=document.createElement("div");
+  item.className="suggestion";
+  item.setAttribute("role","option");
+
+  const name=document.createElement("div");
+  name.className="place-name";
+  name.textContent=location.area||"Location";
+
+  const type=document.createElement("span");
+  type.className="place-type";
+  type.textContent=location.method==="local"?"LOCAL NAME":"MAP RESULT";
+  name.appendChild(type);
+
+  const detail=document.createElement("small");
+  detail.textContent=subtitle||location.displayName||"";
+
+  item.appendChild(name);
+  item.appendChild(detail);
+  item.addEventListener("click",()=>onSelect(location));
+  list.appendChild(item);
+}
+
+function addSearchAgainSuggestion(list,query,which){
+  const item=document.createElement("div");
+  item.className="suggestion";
+  item.innerHTML="<div class='place-name'>Search full address: "+escapeHtml(query)+"</div>"+
+    "<small>Search this street, house, village or landmark</small>";
+  item.addEventListener("click",()=>{
+    list.classList.remove("show");
+    resolveTypedLocation(which,query);
+  });
+  list.appendChild(item);
+}
+
+function selectLocation(which,location){
+  const input=which==="pickup"?pickupInput:destinationInput;
+  const list=which==="pickup"?pickupSuggestions:destinationSuggestions;
+
+  input.value=location.displayName||location.area;
+  if(which==="pickup")pickup=location;else destination=location;
+
+  list.classList.remove("show");
+  resetFare();
+
+  if(pickup&&destination){
+    calculateBoth();
+  }else{
+    showStatus("Location selected. Enter the other location to calculate your fare.","success");
+    routeMap.setView([location.lat,location.lon],14);
+  }
+}
+
+function renderSuggestions(which,query,remote){
+  const list=which==="pickup"?pickupSuggestions:destinationSuggestions;
+  list.innerHTML="";
+
+  remote.forEach(location=>{
+    const km=distanceFromCentre(location).toFixed(1);
+    addSuggestion(list,location,
+      location.displayName+"  ·  "+km+" km from Thisayanvilai",
+      sel=>selectLocation(which,sel));
+  });
+
+  /* Tamil/English locality names (shown after real map results) */
+  const shownKeys=new Set(remote.map(r=>normalize(r.area)));
+  getLocalSuggestions(query)
+    .filter(a=>!shownKeys.has(normalize(a)))
+    .slice(0,remote.length?3:6)
+    .forEach(area=>{
+      addSuggestion(list,{area,displayName:area,method:"local"},
+        "Find this locality on the map",
+        ()=>{list.classList.remove("show");resolveTypedLocation(which,area);});
+    });
+
+  if(!list.children.length){
+    const none=document.createElement("div");
+    none.className="suggestion";
+    none.textContent="No places found within 50 km of Thisayanvilai.";
+    list.appendChild(none);
+  }
+
+  addSearchAgainSuggestion(list,query,which);
+  list.classList.add("show");
+}
+
+function startAutocomplete(which){
+  const input=which==="pickup"?pickupInput:destinationInput;
+  const list=which==="pickup"?pickupSuggestions:destinationSuggestions;
+  const token=++searchToken[which];
+
+  clearTimeout(searchTimer[which]);
+
+  const query=input.value.trim();
+  if(query.length<2){list.classList.remove("show");return;}
+
+  searchTimer[which]=setTimeout(async()=>{
+    list.innerHTML="<div class='suggestion'>Searching nearby places...</div>";
+    list.classList.add("show");
+
+    try{
+      const results=await searchPlaces(query);
+      if(token!==searchToken[which]||input.value.trim()!==query)return;
+      renderSuggestions(which,query,results);
+    }catch(error){
+      if(token!==searchToken[which])return;
+      list.innerHTML="";
+      const m=document.createElement("div");
+      m.className="suggestion";
+      m.textContent=error.message;
+      list.appendChild(m);
+      addSearchAgainSuggestion(list,query,which);
+      list.classList.add("show");
+    }
+  },450);
+}
+
+/* =========================================
+   INPUT EVENTS
+========================================= */
+pickupInput.addEventListener("input",()=>{pickup=null;resetFare();startAutocomplete("pickup");});
+destinationInput.addEventListener("input",()=>{destination=null;resetFare();startAutocomplete("destination");});
+
+pickupInput.addEventListener("focus",()=>{if(pickupInput.value.trim().length>=2&&!pickup)startAutocomplete("pickup");});
+destinationInput.addEventListener("focus",()=>{if(destinationInput.value.trim().length>=2&&!destination)startAutocomplete("destination");});
+
+document.addEventListener("click",e=>{
+  if(!e.target.closest("#pickupField"))pickupSuggestions.classList.remove("show");
+  if(!e.target.closest("#destinationField"))destinationSuggestions.classList.remove("show");
+});
+
+pickupInput.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    pickupSuggestions.classList.remove("show");
+    resolveTypedLocation("pickup",pickupInput.value.trim());
+  }
+});
+destinationInput.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    destinationSuggestions.classList.remove("show");
+    resolveTypedLocation("destination",destinationInput.value.trim());
+  }
+});
+
+/* =========================================
+   TYPED / FULL ADDRESS RESOLUTION
+========================================= */
+async function resolveTypedLocation(which,query){
+  if(!query){showStatus("Please enter a location.","error");return;}
+  showStatus("Finding the exact location on the map...","info");
+
+  try{
+    const best=await pickBest(query,which==="pickup"?"Pickup":"Destination");
+    if(which==="pickup"){pickup=best;pickupInput.value=best.displayName;}
+    else{destination=best;destinationInput.value=best.displayName;}
+
+    if(pickup&&destination){
+      calculateBoth();
+    }else{
+      resetFare();
+      routeMap.setView([best.lat,best.lon],14);
+      showStatus("Location found. Enter the other location.","success");
+    }
+  }catch(error){
+    showStatus(error.message||"Unable to find this address.","error");
+    if(error instanceof OutOfAreaError)showUnavailable(error.message);
+  }
+}
+
+async function resolveLocation(which){
+  const input=which==="pickup"?pickupInput:destinationInput;
+  let current=which==="pickup"?pickup:destination;
+  const label=which==="pickup"?"Pickup":"Destination";
+
+  if(!input.value.trim())throw new Error("Please enter your "+label.toLowerCase()+" location.");
+
+  if(!current||!Number.isFinite(current.lat)||!Number.isFinite(current.lon)){
+    current=await pickBest(input.value.trim(),label);
+    if(which==="pickup")pickup=current;else destination=current;
+    input.value=current.displayName||current.area;
+  }
+
+  if(!isInsideServiceRadius(current)){
+    throw new OutOfAreaError(outsideMessage(label,distanceFromCentre(current)));
+  }
+  return current;
+}
+
+/* =========================================
+   ROUTE DISPLAY
+========================================= */
+function dotIcon(color){
+  return L.divIcon({
+    className:"",
+    html:"<div style='width:17px;height:17px;background:"+color+";border:3px solid white;border-radius:50%;box-shadow:0 1px 6px #0007'></div>",
+    iconSize:[17,17],iconAnchor:[8,8]
+  });
+}
+
+function drawRoute(from,to,geometry){
+  clearRouteMap();
+  const points=geometry.coordinates.map(p=>[p[1],p[0]]);
+  routeLayer=L.polyline(points,{color:"#e5a900",weight:5,opacity:.95}).addTo(routeMap);
+
+  pickupMarker=L.marker([from.lat,from.lon],{icon:dotIcon("#16834a")})
+    .addTo(routeMap).bindPopup("Pickup: "+escapeHtml(from.area));
+  destinationMarker=L.marker([to.lat,to.lon],{icon:dotIcon("#e34c38")})
+    .addTo(routeMap).bindPopup("Destination: "+escapeHtml(to.area));
+
+  routeMap.fitBounds(routeLayer.getBounds(),{padding:[25,25],maxZoom:14});
+  mapStatus.textContent="Driving route displayed";
+  setTimeout(()=>routeMap.invalidateSize(),150);
+}
+
+async function getDrivingRoute(from,to){
+  for(const baseUrl of ROUTE_SERVERS){
+    const url=baseUrl+from.lon+","+from.lat+";"+to.lon+","+to.lat+
+      "?overview=full&geometries=geojson&steps=false";
+    try{
+      const data=await fetchJson(url,18000);
+      if(data.code!=="Ok"||!data.routes||!data.routes.length)throw new Error("No route");
+      return data.routes[0];
+    }catch(e){/* try next server */}
+  }
+  throw new Error("The map found both locations, but the road route service is temporarily unavailable. Please try again.");
+}
+
+/* =========================================
+   DISTANCE + FARE
+========================================= */
+async function calculateBoth(){
+  if(!pickupInput.value.trim()||!destinationInput.value.trim()){
+    showStatus("Enter both pickup and destination locations.","info");
+    resetFare();
+    return;
+  }
+
+  const token=++calculationToken;
+  continueBtn.disabled=true;
+  routeDistanceMeters=null;routeDurationSeconds=null;
+  fareValue.textContent="₹0.00";
+  fareMeta.textContent="Calculating route...";
+  distanceValue.textContent="-- km";
+  mapStatus.textContent="Checking locations...";
+
+  try{
+    showStatus("Checking pickup location...","info");
+    const from=await resolveLocation("pickup");
+    if(token!==calculationToken)return;
+
+    showStatus("Checking destination location...","info");
+    const to=await resolveLocation("destination");
+    if(token!==calculationToken)return;
+
+    showStatus("Finding the driving route...","info");
+    mapStatus.textContent="Finding driving route...";
+    const route=await getDrivingRoute(from,to);
+    if(token!==calculationToken)return;
+
+    routeDistanceMeters=route.distance;
+    routeDurationSeconds=route.duration;
+
+    const fare=routeDistanceMeters*RATE_PER_METRE;
+    const km=routeDistanceMeters/1000;
+
+    drawRoute(from,to,route.geometry);
+
+    fareValue.textContent="₹"+fare.toFixed(2);
+    distanceValue.textContent=km.toFixed(2)+" km";
+    fareMeta.textContent=Math.round(routeDistanceMeters)+" metres · "+
+      formatDuration(routeDurationSeconds)+" estimated · ₹0.02/metre";
+
+    continueBtn.disabled=false;
+    showStatus("Service available! Estimated fare: ₹"+fare.toFixed(2)+".","success");
+
+  }catch(error){
+    if(token!==calculationToken)return;
+    routeDistanceMeters=null;routeDurationSeconds=null;
+    fareValue.textContent="₹0.00";
+    fareMeta.textContent="Unable to calculate fare";
+    distanceValue.textContent="-- km";
+    continueBtn.disabled=true;
+    clearRouteMap();
+    showStatus(error.message||"Unable to calculate your route.","error");
+    if(error instanceof OutOfAreaError)showUnavailable(error.message);
+  }
+}
+
+/* =========================================
+   GPS PICKUP
+========================================= */
+gpsBtn.addEventListener("click",()=>{
+  if(!navigator.geolocation){
+    showStatus("GPS is not supported. Enter your pickup manually.","error");
+    return;
+  }
+  gpsBtn.disabled=true;
+  gpsBtn.textContent="LOCATING...";
+  showStatus("Getting your GPS location...","info");
+
+  navigator.geolocation.getCurrentPosition(async position=>{
+    try{
+      const lat=position.coords.latitude,lon=position.coords.longitude;
+      const current={
+        area:"My Current Location",displayName:"My Current Location",
+        lat,lon,method:"gps",accuracy:position.coords.accuracy
+      };
+
+      if(!isInsideServiceRadius(current)){
+        throw new OutOfAreaError(outsideMessage("Your current location",distanceFromCentre(current)));
+      }
+
+      pickup=current;
+      pickupInput.value="My Current Location";
+      pickupSuggestions.classList.remove("show");
+      routeMap.setView([lat,lon],15);
+
+      if(destinationInput.value.trim()){
+        await calculateBoth();
+      }else{
+        resetFare();
+        pickup=current;
+        showStatus("GPS pickup selected. Now enter your destination.","success");
+      }
+    }catch(error){
+      showStatus(error.message,"error");
+      if(error instanceof OutOfAreaError)showUnavailable(error.message);
+    }finally{
+      gpsBtn.disabled=false;
+      gpsBtn.textContent="⌖ MY LOCATION";
+    }
+  },error=>{
+    let message="Could not detect your location. Enable GPS or enter your pickup manually.";
+    if(error.code===1)message="Location permission denied. Allow location access in your browser settings.";
+    else if(error.code===2)message="GPS location is unavailable. Please try again.";
+    else if(error.code===3)message="GPS request timed out. Please try again.";
+    showStatus(message,"error");
+    gpsBtn.disabled=false;
+    gpsBtn.textContent="⌖ MY LOCATION";
+  },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+});
+
+/* =========================================
+   BOOKING PAGE CONNECTION
+========================================= */
+continueBtn.addEventListener("click",()=>{
+  if(!pickup||!destination||!Number.isFinite(routeDistanceMeters)){
+    showStatus("Please select valid pickup and destination locations first.","error");
+    return;
+  }
+  const booking={
+    service:"TSY TAXI",
+    pickup:{...pickup},
+    destination:{...destination},
+    distanceMeters:routeDistanceMeters,
+    distanceKm:Number((routeDistanceMeters/1000).toFixed(3)),
+    fare:Number((routeDistanceMeters*RATE_PER_METRE).toFixed(2)),
+    ratePerKm:RATE_PER_KM,
+    estimatedDurationSeconds:routeDurationSeconds,
+    estimatedDuration:formatDuration(routeDurationSeconds),
+    createdAt:new Date().toISOString()
+  };
+  sessionStorage.setItem("tsyTaxiBooking",JSON.stringify(booking));
+  window.location.href="booking.html";
+});
+
+window.addEventListener("load",()=>setTimeout(()=>routeMap.invalidateSize(),250));
+</script>
+</body>
+</html>
